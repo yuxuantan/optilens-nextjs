@@ -71,7 +71,6 @@ export async function GET(request) {
                     skip = true;
                     break;
                 }
-
                 attempts++;
                 console.error(`Error fetching stock data for ${ticker}, attempt ${attempts} of ${maxAttempts}:`, error);
                 if (attempts < maxAttempts) {
