@@ -4,7 +4,7 @@ import { getApexBullAppearDates } from '../../../utils/indicators';
 import { fetchStockData } from '../../../utils/getStockData';
 import { supabase } from "../../supabaseClient";
 
-export async function GET(request) {
+export async function GET() {
     // fetch all tickers from GET /fetch-tickers
     const res = await fetch('http://localhost:3000/api/fetch-tickers');
     if (!res.ok) throw new Error('Failed to fetch tickers');
@@ -12,7 +12,6 @@ export async function GET(request) {
     const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
     // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
 
-    const result = {};
     // fetch bull appear data
 
     const { data: bullAppearData, error: bullAppearError } = await supabase
