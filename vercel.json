@@ -1,0 +1,6 @@
+{
+    "crons": [{
+      "path": "/api/calculate-apex-cache",
+      "schedule": "0 0 * * *"
+    }]
+  }
