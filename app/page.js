@@ -13,6 +13,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 
+import { supabase } from "./supabaseClient";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
@@ -21,7 +23,7 @@ export default function StockScreener() {
     tickers: [],
     indicatorSettings: {
       apexBullRaging: { isEnabled: false },
-      apexBullAppear: { isEnabled: false },
+      apexBullAppear: { isEnabled: true },
       // apexUptrend: { isEnabled: false },
       // goldenCrossSma: { isEnabled: false, shortSma: 50, longSma: 200 },
       // deathCrossSma: { isEnabled: false, shortSma: 50, longSma: 200 },
@@ -35,7 +37,7 @@ export default function StockScreener() {
       // bollingerPullback: { isEnabled: false, window: 20, numStdDev: 2 },
       // volumeSpike: { isEnabled: false, window: 20, numStdDev: 2 },
     },
-    showWinRate: false,
+    showWinRate: true,
     showOnlyIfAllSignalsMet: true,
     showOnlyMarketPriceAbove: 20,
     recency: 5,
@@ -50,6 +52,7 @@ export default function StockScreener() {
 
   const [isScreening, setIsScreening] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [apexBullAppearDates, setApexBullAppearDates] = useState({});
   const abortControllerRef = useRef(null);
 
 
@@ -66,6 +69,26 @@ export default function StockScreener() {
         console.error('Error fetching tickers:', error);
       }
     };
+    // fetch screening results for bull appear from supabase
+    const fetchBullAppearResults = async () => {
+      const { data, error } = await supabase.from('apex_bull_appear').select();
+      if (error) {
+        console.error('Error fetching bull appear results:', error);
+        return;
+      }
+      console.log('bull appear cache', data);
+      // convert data to dictionary, where ticker is the key and dates are the values
+      let result = data.reduce((acc, { ticker, dates }) => {
+        if (!acc[ticker]) {
+          acc[ticker] = [];
+        }
+        acc[ticker].push(dates);
+        return acc;
+      }, {});
+      console.log('result', result);
+      setApexBullAppearDates(result);
+    };
+    fetchBullAppearResults();
     fetchTickers();
   }, []);
 
@@ -131,50 +154,65 @@ export default function StockScreener() {
       abortControllerRef.current.abort(); // Cancel the ongoing request
     }
   };
-
   const handleScreening = async () => {
+    console.log('handleScreening called');
+    
     abortControllerRef.current = new AbortController();
     const { signal } = abortControllerRef.current;
-
+    
     setIsScreening(true);
     setProgress(0);
     setScreeningResults([]);
+    
     let tickers_to_screen = [];
     if (settings.tickers.includes("Everything")) {
-      tickers_to_screen = tickerOptions
+      tickers_to_screen = tickerOptions;
+    } else {
+      tickers_to_screen = settings.tickers;
     }
-    else {
-      tickers_to_screen = settings.tickers
-    }
-    setTotalScreeningCount(tickers_to_screen.length)
+    
+    console.log('Tickers to screen:', tickers_to_screen);
+    
+    setTotalScreeningCount(tickers_to_screen.length);
+    
     for (let i = 0; i < tickers_to_screen.length; i++) {
       const ticker = tickers_to_screen[i];
+      console.log(`Processing ticker: ${ticker}`);
+      
       try {
+        console.log(`Sending request for ${ticker}...`);
         const response = await fetch('/api/analyze-stock', {
           method: 'POST',
-          signal, // Pass the signal to the fetch request
+          signal,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ticker, settings }),
+          body: JSON.stringify({ ticker, settings, apexBullAppearDates: apexBullAppearDates[ticker] }),
         });
+  
+        console.log(`Response for ${ticker} received:`, response);
+  
         const result = await response.json();
-        if (result) {
-          if (result.dates) {
-            const newResult = { ticker, dates: result.dates };
-            if (result.winRate) {
-              newResult.winRate = result.winRate;
-            }
-            setScreeningResults(prev => [...prev, newResult]);
+        console.log(`Parsed result for ${ticker}:`, result);
+  
+        if (result && result.dates) {
+          const newResult = { ticker, dates: result.dates };
+          if (result.winRate) {
+            newResult.winRate = result.winRate;
           }
+          setScreeningResults(prev => [...prev, newResult]);
         }
       } catch (error) {
         console.error(`Error analyzing ${ticker}:`, error);
       }
+  
       setProgress((i + 1) / tickers_to_screen.length * 100);
-      setCurrentScreenedCount(i + 1)
+      setCurrentScreenedCount(i + 1);
     }
-
+  
     setIsScreening(false);
+    console.log('Screening completed.');
   };
+  
+
 
   return (
     <div className="container mx-auto p-4">

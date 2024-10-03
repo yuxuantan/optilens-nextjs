@@ -20,11 +20,11 @@ function getApexBullAppearDates(data, showWinRate = true) {
     const potentialBearTraps = getLowInflexionPoints(aggregatedData);
     for (let i = 0; i < wallabyDates.length; i++) {
         const date = wallabyDates[i];
-        console.log('inspecting wallaby date', date);
+        //console.log('inspecting wallaby date', date);
         const wallabyPos = aggregatedData.findIndex(obj => obj.Date === date);
         
         if (wallabyPos === -1) {
-            console.log('Date not found in aggregatedData:', date);
+            //console.log('Date not found in aggregatedData:', date);
             continue;
         } const kangarooPos = wallabyPos - 1;
 
@@ -35,7 +35,7 @@ function getApexBullAppearDates(data, showWinRate = true) {
             aggregatedData[startIndex]?.Date,
             aggregatedData[endIndex]?.Date
         );
-        // console.log(activeBearTraps)
+        // //console.log(activeBearTraps)
         if (!activeBearTraps.length) continue;
 
         let anyBarWentBelowKangaroo = false;
@@ -47,16 +47,16 @@ function getApexBullAppearDates(data, showWinRate = true) {
             kangarooPos + 5 < aggregatedData.length &&
             aggregatedData[kangarooPos].SMA_200 > aggregatedData[kangarooPos + 5].SMA_200
         ) {
-            console.log('200 SMA is not sloping upwards');
+            //console.log('200 SMA is not sloping upwards');
             continue;
         }
 
 
         // Condition 2: Should be above 50 SMA (roughly)
         if (aggregatedData[kangarooPos].Low <= aggregatedData[kangarooPos].SMA_50) {
-            console.log('not above 50 SMA');
-            console.log('aggregatedData[kangarooPos].Low', aggregatedData[kangarooPos].Low);
-            console.log('aggregatedData[kangarooPos].SMA_50', aggregatedData[kangarooPos].SMA_50);
+            //console.log('not above 50 SMA');
+            //console.log('aggregatedData[kangarooPos].Low', aggregatedData[kangarooPos].Low);
+            //console.log('aggregatedData[kangarooPos].SMA_50', aggregatedData[kangarooPos].SMA_50);
             continue;
         }
         // Check the next 4 trading dates from wallaby date
@@ -64,17 +64,17 @@ function getApexBullAppearDates(data, showWinRate = true) {
         for (let i = 1; i < 5; i++) {
             const targetPos = wallabyPos + i;
             if (targetPos >= aggregatedData.length) {
-                console.log('targetPos is out of bounds');
+                //console.log('targetPos is out of bounds');
                 break;
             }
 
             const currData = aggregatedData[targetPos];
             potentialBullAppearDate = aggregatedData[targetPos].Date;
-            console.log('interating 4 trading dates..', potentialBullAppearDate);
+            //console.log('interating 4 trading dates..', potentialBullAppearDate);
             if (currData.High > aggregatedData[kangarooPos].High) {
-                console.log('found a bar that went above kangaroo');
-                console.log('currData.High', currData.High);
-                console.log('aggregatedData[kangarooPos].High', aggregatedData[kangarooPos].High);
+                //console.log('found a bar that went above kangaroo');
+                //console.log('currData.High', currData.High);
+                //console.log('aggregatedData[kangarooPos].High', aggregatedData[kangarooPos].High);
                 break;
             }
 
@@ -82,7 +82,7 @@ function getApexBullAppearDates(data, showWinRate = true) {
                 !anyBarWentBelowKangaroo &&
                 currData.Low < aggregatedData[kangarooPos].Low
             ) {
-                console.log('found a bar that went below kangaroo');
+                //console.log('found a bar that went below kangaroo');
                 anyBarWentBelowKangaroo = true;
             }
 
@@ -99,7 +99,7 @@ function getApexBullAppearDates(data, showWinRate = true) {
                     currData.Close - currData.Open > 0.5 * (currData.High - currData.Low)
                 ) {
                     bullishBarWentBackUpToRange = true;
-                    console.log('found a bullish bar that went back up to range');
+                    //console.log('found a bullish bar that went back up to range');
                     break;
                 }
             }
@@ -116,11 +116,11 @@ function getApexBullAppearDates(data, showWinRate = true) {
             const currData = aggregatedData[currPos];
             if (currData.Date > potentialBullAppearDate){
                 // cut if current date to check for trap/sma is > bull appear date. need to be before
-                console.log('curr iteration is after potential bullAppearDate');
+                //console.log('curr iteration is after potential bullAppearDate');
                 break;
             }
             if (activeBearTraps.some(trap => trap[1] > currData.Low && trap[1] < currData.High)) {
-                console.log('active bear trap taken');
+                //console.log('active bear trap taken');
             } else if (
                 // touches one of the sma
                 i > 0 &&
@@ -128,18 +128,18 @@ function getApexBullAppearDates(data, showWinRate = true) {
                     (currData.Low <= aggregatedData[currPos].SMA_50 && aggregatedData[currPos].SMA_50 <= currData.High) ||
                     (currData.Low <= aggregatedData[currPos].SMA_200 && aggregatedData[currPos].SMA_200 <= currData.High))
             ) {
-                console.log('touches sma');
-                console.log('currData.Low', currData.Low);
-                console.log('currData.High', currData.High);
-                console.log('aggregatedData[currPos].SMA_20', aggregatedData[currPos].SMA_20);
-                console.log('aggregatedData[currPos].SMA_50', aggregatedData[currPos].SMA_50);
-                console.log('aggregatedData[currPos].SMA_200', aggregatedData[currPos].SMA_200);
+                //console.log('touches sma');
+                //console.log('currData.Low', currData.Low);
+                //console.log('currData.High', currData.High);
+                //console.log('aggregatedData[currPos].SMA_20', aggregatedData[currPos].SMA_20);
+                //console.log('aggregatedData[currPos].SMA_50', aggregatedData[currPos].SMA_50);
+                //console.log('aggregatedData[currPos].SMA_200', aggregatedData[currPos].SMA_200);
             }
             else {
                 continue;
             }
 
-            console.log('✅bull appear')
+            //console.log('✅bull appear')
             bullAppearDates.push(potentialBullAppearDate);
             break;
         }
