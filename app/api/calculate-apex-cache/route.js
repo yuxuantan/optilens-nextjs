@@ -16,7 +16,6 @@ export async function GET() {
     // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
 
     // fetch bull appear data
-
     const { data: bullAppearData, error: bullAppearError } = await supabase
         .from('apex_bull_appear')
         .select()
