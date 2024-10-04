@@ -4,12 +4,15 @@ import { getApexBullAppearDates } from '../../../utils/indicators';
 import { fetchStockData } from '../../../utils/getStockData';
 import { supabase } from "../../supabaseClient";
 import secCompanyTickers from '../../../data/sec_company_tickers.json';
-export const experimental_ppr = true
 
+export const dynamic = 'force-dynamic'
 
-async function calculateApexCache() {
+export async function GET() {
     // fetch all tickers from GET /fetch-tickers
-    const res = await fetch('https://www.sec.gov/files/company_tickers.json');
+    // const res = await fetch('https://www.sec.gov/files/company_tickers.json');
+    const res = await fetch('https://www.sec.gov/files/company_tickers.json', {
+        cache: "no-store" // no-cache
+    });
 
     let get_all_tickers_resp;
     // const res = await fetch('/api/fetch-tickers');
@@ -144,5 +147,3 @@ async function calculateApexCache() {
         headers: { 'Content-Type': 'application/json' }
     });
 }
-
-await calculateApexCache();
