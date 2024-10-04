@@ -1,5 +1,5 @@
 
-import { calculateSMA, get2DayAggregatedData, getLowInflexionPoints, findBearTraps } from "./indicator_helpers";
+import { calculateSMA, get2DayAggregatedData, getLowInflexionPoints, getHighInflexionPoints, findBearTraps, findLowestBearTrapWithinPriceRange } from "./indicator_helpers";
 function getApexBullAppearDates(data, showWinRate = true) {
 
     let aggregatedData = get2DayAggregatedData(data);
@@ -159,11 +159,10 @@ function getApexBullRagingDates(data, showWinRate = true) {
     let futureBearTraps = [...potentialBearTraps];
   
     const bullRagingDates = [];
-  
-    highInflexionPoints.forEach(([highPointDate, highPointValue]) => {
-      if (!data.some(row => row.date === highPointDate)) {
-        return;
-      }
+    highInflexionPoints.forEach(({ date: highPointDate, high: highPointValue }) => {
+        if (!data.some(row => row.date === highPointDate)) {
+            return;
+        }
   
       // Find the stopping point (which is the next bear trap)
       const stoppingPointDate = futureBearTraps.find(

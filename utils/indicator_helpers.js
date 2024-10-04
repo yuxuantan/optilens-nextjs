@@ -95,6 +95,27 @@ function getLowInflexionPoints(data) {
   return allLowInflexionPoints;
 }
 
+function getHighInflexionPoints(data) {
+  const allHighInflexionPoints = [];
+
+  // Check edge cases
+  if (!data || data.length < 5) return allHighInflexionPoints;
+
+  // Loop through data to find inflexion points
+  for (let i = 2; i < data.length - 2; i++) {
+    const currentHigh = data[i]["High"];
+    if (
+      data[i - 1]["High"] < currentHigh &&
+      data[i + 1]["High"] < currentHigh &&
+      data[i - 2]["High"] < currentHigh &&
+      data[i + 2]["High"] < currentHigh
+    ) {
+      allHighInflexionPoints.push({ date: data[i].Date, high: currentHigh });
+    }
+  }
+
+  return allHighInflexionPoints;
+}
 
 
 /**
@@ -133,4 +154,49 @@ function findBearTraps(potentialTraps, fromDate, toDate) {
 
   return bearTraps;
 }
-export { calculateSMA, get2DayAggregatedData, getLowInflexionPoints, findBearTraps };
+
+
+/**
+ * Find the lowest bear trap within a specified price range.
+ *
+ * @param {Array} potentialTraps - An array of tuples, where each tuple contains the date and low value of a potential trap (e.g., [{ date: '2022-01-01', low: 95 }, ...]).
+ * @param {string} upToDate - The ending date string in the format 'YYYY-MM-DD'.
+ * @param {number} lowPrice - The lower bound of the price range.
+ * @param {number} highPrice - The upper bound of the price range.
+ * @returns {Object|null} An object containing the date and low value of the lowest bear trap within the price range, or null if none found.
+ */
+function findLowestBearTrapWithinPriceRange(potentialTraps, upToDate, lowPrice, highPrice) {
+  const fromDate = new Date(new Date(upToDate).setFullYear(new Date(upToDate).getFullYear() - 1));
+  const bearTrapsUpToDate = findBearTraps(potentialTraps, fromDate.toISOString().split('T')[0], upToDate);
+
+  for (const { date, low } of bearTrapsUpToDate) {
+    if (lowPrice <= low && low <= highPrice) {
+      return { date, low };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Find the highest bull trap within a specified price range.
+ *
+ * @param {Array} potentialTraps - An array of tuples, where each tuple contains the date and high value of a potential trap (e.g., [{ date: '2022-01-01', high: 105 }, ...]).
+ * @param {string} upToDate - The ending date string in the format 'YYYY-MM-DD'.
+ * @param {number} lowPrice - The lower bound of the price range.
+ * @param {number} highPrice - The upper bound of the price range.
+ * @returns {Object|null} An object containing the date and high value of the highest bull trap within the price range, or null if none found.
+ */
+function findHighestBullTrapWithinPriceRange(potentialTraps, upToDate, lowPrice, highPrice) {
+  const fromDate = new Date(new Date(upToDate).setFullYear(new Date(upToDate).getFullYear() - 1));
+  const bullTrapsUpToDate = findBullTraps(potentialTraps, fromDate.toISOString().split('T')[0], upToDate);
+
+  for (const { date, high } of bullTrapsUpToDate) {
+    if (lowPrice <= high && high <= highPrice) {
+      return { date, high };
+    }
+  }
+
+  return null;
+}
+export { calculateSMA, get2DayAggregatedData, getLowInflexionPoints, getHighInflexionPoints, findBearTraps, findLowestBearTrapWithinPriceRange, findHighestBullTrapWithinPriceRange };

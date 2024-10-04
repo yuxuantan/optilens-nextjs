@@ -109,10 +109,27 @@ export async function GET() {
             continue;
         }
 
+        // // ******* BULL RAGING
+        // const bullRagingDates = getApexBullRagingDates(stockData);
+        // console.log(bullRagingDates);
+        // let analysisResultBullRaging = getAnalysisResults(bullRagingDates, stockData);
+
+        // // write the dates to the cache db
+        // const { error2 } = await supabase
+        //     .from('apex_bull_raging')
+        //     .insert({ ticker: ticker, analysis: analysisResultBullRaging, latestClosePrice: stockData[stockData.length - 1]?.close.toFixed(2) })
+        // if (error2) {
+        //     console.error('Error fetching bull appear results:', error);
+        //     return;
+        // }
+        // else {
+        //     console.log('Inserted apex bull appear results for ticker:', ticker);
+        // }
+
         // ******* BULL APPEAR
         // use indicators.js to calculate the bull appear dates -> dictionary of ticker to dates
         const bullAppearDates = getApexBullAppearDates(stockData);
-        let analysisResultBullAppear = getAnalysisResults(bullAppearDates);
+        let analysisResultBullAppear = getAnalysisResults(bullAppearDates, stockData);
         
         // write the dates to the cache db
         const { error } = await supabase
@@ -126,21 +143,6 @@ export async function GET() {
             console.log('Inserted apex bull appear results for ticker:', ticker);
         }
 
-        // ******* BULL RAGING
-        const bullRagingDates = getApexBullRagingDates(stockData);
-        let analysisResultBullRaging = getAnalysisResults(bullRagingDates);
-
-        // write the dates to the cache db
-        const { error2 } = await supabase
-            .from('apex_bull_raging')
-            .insert({ ticker: ticker, analysis: analysisResultBullRaging, latestClosePrice: stockData[stockData.length - 1]?.close.toFixed(2) })
-        if (error2) {
-            console.error('Error fetching bull appear results:', error);
-            return;
-        }
-        else {
-            console.log('Inserted apex bull appear results for ticker:', ticker);
-        }
     }
     // return a response success msg
     return new Response(JSON.stringify({ message: 'Success' }), {
@@ -148,7 +150,7 @@ export async function GET() {
     });
 }
 
-function getAnalysisResults(dates){
+function getAnalysisResults(dates, stockData){
     let analysisResult = {};
     for (const date of dates) {
         console.log('Calculating change for date:', date);
@@ -158,8 +160,8 @@ function getAnalysisResults(dates){
             return entryDate === dateObj;
         });
         console.log(dateIndex);
-        const dateSimple = new Date(bullAppearDate).toISOString().split('T')[0];
-        analysisResult[bullAppearDateSimple] = {};
+        const dateSimple = new Date(date).toISOString().split('T')[0];
+        analysisResult[dateSimple] = {};
         if (dateIndex !== -1) {
             analysisResult[dateSimple].change1TD = (stockData[dateIndex + 1] && stockData[dateIndex]) ? ((stockData[dateIndex + 1].close - stockData[dateIndex].close) / stockData[dateIndex].close) * 100 : null;
             analysisResult[dateSimple].change5TD = (stockData[dateIndex + 5] && stockData[dateIndex]) ? ((stockData[dateIndex + 5].close - stockData[dateIndex].close) / stockData[dateIndex].close) * 100 : null;
