@@ -6,14 +6,21 @@ import { supabase } from "../../supabaseClient";
 
 
 export async function GET() {
-    // // fetch all tickers from GET /fetch-tickers
-    // const res = await fetch('https://www.sec.gov/files/company_tickers.json');
+    // fetch all tickers from GET /fetch-tickers
+    const res = await fetch('https://www.sec.gov/files/company_tickers.json');
 
-    // // const res = await fetch('/api/fetch-tickers');
-    // if (!res.ok) throw new Error(JSON.stringify(res));
-    // const get_all_tickers_resp = await res.json();
-    // const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
-    const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
+    let get_all_tickers_resp;
+    // const res = await fetch('/api/fetch-tickers');
+    if (!res.ok) {
+        console.error('Error fetching tickers:', res.statusText);
+        // use sec_company_tickers.json as backup
+        get_all_tickers_resp = require('../../../data/sec_company_tickers.json');
+    }
+    else {
+        get_all_tickers_resp = await res.json();
+    }
+    const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
+    // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
 
     // fetch bull appear data
     const { data: bullAppearData, error: bullAppearError } = await supabase
@@ -27,9 +34,9 @@ export async function GET() {
     const currentDate = new Date();
     const fiveAMSGT = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 5, 0, 0);
 
-    const bullAppearDataWithValidDates = bullAppearData.filter(item => 
-        item.analysis && 
-        item.latestClosePrice && 
+    const bullAppearDataWithValidDates = bullAppearData.filter(item =>
+        item.analysis &&
+        item.latestClosePrice &&
         new Date(item.created_at) > fiveAMSGT
     );
 
@@ -45,7 +52,7 @@ export async function GET() {
     // for each ticker, get stock data for each ticker
     for (const ticker of tickersToCalculate) {
         console.log('⭐️ Calculating apex bull appear dates for', ticker);
-        
+
         // delete record from db table for those that i need to calculate
         const response = await supabase
             .from('apex_bull_appear')
@@ -89,7 +96,7 @@ export async function GET() {
                         status: 500
                     });
                 }
-                
+
 
             }
         }
