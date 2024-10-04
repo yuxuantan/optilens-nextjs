@@ -4,9 +4,10 @@ import { getApexBullAppearDates } from '../../../utils/indicators';
 import { fetchStockData } from '../../../utils/getStockData';
 import { supabase } from "../../supabaseClient";
 import secCompanyTickers from '../../../data/sec_company_tickers.json';
+export const dynamic = "force-dynamic";
 
 
-export async function GET() {
+async function calculateApexCache() {
     // fetch all tickers from GET /fetch-tickers
     const res = await fetch('https://www.sec.gov/files/company_tickers.json');
 
@@ -143,3 +144,5 @@ export async function GET() {
         headers: { 'Content-Type': 'application/json' }
     });
 }
+
+await calculateApexCache();
