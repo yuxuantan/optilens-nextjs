@@ -7,32 +7,34 @@ import secCompanyTickers from '../../../data/sec_company_tickers.json';
 
 export const dynamic = 'force-dynamic'
 
-export default async function handler(req, res) {
+export async function GET() {
     // fetch all tickers from GET /fetch-tickers
-    const response = await fetch('https://www.sec.gov/files/company_tickers.json', {
+    // const res = await fetch('https://www.sec.gov/files/company_tickers.json');
+    const res = await fetch('https://www.sec.gov/files/company_tickers.json', {
         cache: "no-store" // no-cache
     });
 
     let get_all_tickers_resp;
-    if (!response.ok) {
-        console.error('Error fetching tickers:', response.statusText);
+    // const res = await fetch('/api/fetch-tickers');
+    if (!res.ok) {
+        console.error('Error fetching tickers:', res.statusText);
         get_all_tickers_resp = secCompanyTickers;
-    } else {
-        get_all_tickers_resp = await response.json();
+    }
+    else {
+        get_all_tickers_resp = await res.json();
     }
     const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
+    // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
 
     // fetch bull appear data
     const { data: bullAppearData, error: bullAppearError } = await supabase
         .from('apex_bull_appear')
-        .select();
+        .select()
     if (bullAppearError) {
-        console.error('Error fetching bull appear results:', bullAppearError);
-        res.status(500).json({ message: 'Error fetching bull appear results' });
+        console.error('Error fetching bull appear results:', error);
         return;
     }
-
-    // filter out those that have recently been created
+    // filter out those that has recently been created
     const currentDate = new Date();
     const fiveAMSGT = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 5, 0, 0);
 
@@ -43,25 +45,30 @@ export default async function handler(req, res) {
         new Date(item.created_at) > fiveAMSGT
     );
 
+
     console.log('Bull appear data with valid dates:', bullAppearDataWithValidDates.length);
     const tickersToCalculate = tickers.filter(ticker => !bullAppearDataWithValidDates.some(item => item.ticker === ticker));
     console.log('Tickers to calculate:', tickersToCalculate.length);
+
+
+
+
 
     // for each ticker, get stock data for each ticker
     for (const ticker of tickersToCalculate) {
         console.log('⭐️ Calculating apex bull appear dates for', ticker);
 
-        // delete record from db table for those that need to be calculated
-        const deleteResponse = await supabase
+        // delete record from db table for those that i need to calculate
+        const response = await supabase
             .from('apex_bull_appear')
             .delete()
-            .eq('ticker', ticker);
-        if (deleteResponse.error) {
-            console.error('Error deleting apex bull appear results:', deleteResponse.error);
-            res.status(500).json({ message: 'Error deleting apex bull appear results' });
+            .eq('ticker', ticker) // TOO large
+        if (response.error) {
+            console.error('Error deleting apex bull appear results:', response.error);
             return;
-        } else {
-            console.log('Deleted apex bull appear results for ticker:', ticker);
+        }
+        else {
+            console.log('Deleted apex bull appear results for tickers:', ticker);
         }
 
         let stockData;
@@ -73,8 +80,10 @@ export default async function handler(req, res) {
         while (attempts < maxAttempts) {
             try {
                 stockData = await fetchStockData(ticker);
+                // console.log(stockData.slice(0, 2));
                 break; // exit loop if fetch is successful
             } catch (error) {
+                // if error has "No data found, symbol may be delisted" message, break out of 2 loops
                 if (!error.message.includes('Too Many Requests')) {
                     console.error(`No data found for ${ticker}. Skipping...`);
                     skip = true;
@@ -87,34 +96,58 @@ export default async function handler(req, res) {
                     await new Promise(resolve => setTimeout(resolve, retryDelay));
                 } else {
                     console.error(`Failed to fetch stock data for ${ticker} after ${maxAttempts} attempts.`);
-                    res.status(500).json({ message: `Failed to fetch stock data for ${ticker}` });
-                    return;
+                    return new Response(JSON.stringify({ message: `Failed to fetch stock data for ${ticker}` }), {
+                        headers: { 'Content-Type': 'application/json' },
+                        status: 500
+                    });
                 }
+
+
             }
         }
         if (skip) {
             continue;
         }
 
+        // // ******* BULL RAGING
+        // const bullRagingDates = getApexBullRagingDates(stockData);
+        // console.log(bullRagingDates);
+        // let analysisResultBullRaging = getAnalysisResults(bullRagingDates, stockData);
+
+        // // write the dates to the cache db
+        // const { error2 } = await supabase
+        //     .from('apex_bull_raging')
+        //     .insert({ ticker: ticker, analysis: analysisResultBullRaging, latestClosePrice: stockData[stockData.length - 1]?.close.toFixed(2) })
+        // if (error2) {
+        //     console.error('Error fetching bull appear results:', error);
+        //     return;
+        // }
+        // else {
+        //     console.log('Inserted apex bull appear results for ticker:', ticker);
+        // }
+
         // ******* BULL APPEAR
+        // use indicators.js to calculate the bull appear dates -> dictionary of ticker to dates
         const bullAppearDates = getApexBullAppearDates(stockData);
         let analysisResultBullAppear = getAnalysisResults(bullAppearDates, stockData);
-
+        
         // write the dates to the cache db
         const { error } = await supabase
             .from('apex_bull_appear')
-            .insert({ ticker: ticker, analysis: analysisResultBullAppear, latestClosePrice: stockData[stockData.length - 1]?.close.toFixed(2) });
+            .insert({ ticker: ticker, analysis: analysisResultBullAppear, latestClosePrice: stockData[stockData.length - 1]?.close.toFixed(2) })
         if (error) {
-            console.error('Error inserting bull appear results:', error);
-            res.status(500).json({ message: 'Error inserting bull appear results' });
+            console.error('Error fetching bull appear results:', error);
             return;
-        } else {
+        }
+        else {
             console.log('Inserted apex bull appear results for ticker:', ticker);
         }
-    }
 
-    // return a response success message
-    res.status(200).json({ message: 'Success' });
+    }
+    // return a response success msg
+    return new Response(JSON.stringify({ message: 'Success' }), {
+        headers: { 'Content-Type': 'application/json' }
+    });
 }
 
 function getAnalysisResults(dates, stockData){
