@@ -6,7 +6,8 @@ import { supabase } from "../../supabaseClient";
 
 export async function GET() {
     // fetch all tickers from GET /fetch-tickers
-    const res = await fetch('http://localhost:3000/api/fetch-tickers');
+    // const res = await fetch('http://localhost:3000/api/fetch-tickers');
+    const res = await fetch('/api/fetch-tickers');
     if (!res.ok) throw new Error('Failed to fetch tickers');
     const get_all_tickers_resp = await res.json();
     const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
