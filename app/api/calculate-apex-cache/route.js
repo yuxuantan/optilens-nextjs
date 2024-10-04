@@ -6,14 +6,14 @@ import { supabase } from "../../supabaseClient";
 
 
 export async function GET() {
-    // fetch all tickers from GET /fetch-tickers
-    const res = await fetch('https://www.sec.gov/files/company_tickers.json');
+    // // fetch all tickers from GET /fetch-tickers
+    // const res = await fetch('https://www.sec.gov/files/company_tickers.json');
 
-    // const res = await fetch('/api/fetch-tickers');
-    if (!res.ok) throw new Error(JSON.stringify(res));
-    const get_all_tickers_resp = await res.json();
-    const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
-    // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
+    // // const res = await fetch('/api/fetch-tickers');
+    // if (!res.ok) throw new Error(JSON.stringify(res));
+    // const get_all_tickers_resp = await res.json();
+    // const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
+    const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
 
     // fetch bull appear data
     const { data: bullAppearData, error: bullAppearError } = await supabase
@@ -24,9 +24,14 @@ export async function GET() {
         return;
     }
     // filter out those that has recently been created
-    const oneDayAgo = new Date();
-    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-    const bullAppearDataWithValidDates = bullAppearData.filter(item => item.analysis && item.latestClosePrice && new Date(item.created_at) > oneDayAgo);
+    const currentDate = new Date();
+    const fiveAMSGT = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 5, 0, 0);
+
+    const bullAppearDataWithValidDates = bullAppearData.filter(item => 
+        item.analysis && 
+        item.latestClosePrice && 
+        new Date(item.created_at) > fiveAMSGT
+    );
 
 
     console.log('Bull appear data with valid dates:', bullAppearDataWithValidDates.length);
