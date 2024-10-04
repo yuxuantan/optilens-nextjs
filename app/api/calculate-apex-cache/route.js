@@ -4,7 +4,7 @@ import { getApexBullAppearDates } from '../../../utils/indicators';
 import { fetchStockData } from '../../../utils/getStockData';
 import { supabase } from "../../supabaseClient";
 import secCompanyTickers from '../../../data/sec_company_tickers.json';
-export const dynamic = "force-dynamic";
+export const experimental_ppr = true
 
 
 async function calculateApexCache() {
