@@ -3,6 +3,7 @@
 import { getApexBullAppearDates } from '../../../utils/indicators';
 import { fetchStockData } from '../../../utils/getStockData';
 import { supabase } from "../../supabaseClient";
+import secCompanyTickers from '../../../data/sec_company_tickers.json';
 
 
 export async function GET() {
@@ -13,8 +14,7 @@ export async function GET() {
     // const res = await fetch('/api/fetch-tickers');
     if (!res.ok) {
         console.error('Error fetching tickers:', res.statusText);
-        // use sec_company_tickers.json as backup
-        get_all_tickers_resp = require('../../../data/sec_company_tickers.json');
+        get_all_tickers_resp = secCompanyTickers;
     }
     else {
         get_all_tickers_resp = await res.json();
