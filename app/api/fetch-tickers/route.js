@@ -1,6 +1,4 @@
 // app/api/fetch-tickers/route.js
-export const experimental_ppr = true
-
 export async function GET() {
     try {
       const response = await fetch('https://www.sec.gov/files/company_tickers.json');
