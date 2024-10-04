@@ -134,7 +134,7 @@ export async function GET() {
         const { error2 } = await supabase
             .from('apex_bull_raging')
             .insert({ ticker: ticker, analysis: analysisResultBullRaging, latestClosePrice: stockData[stockData.length - 1]?.close.toFixed(2) })
-        if (error) {
+        if (error2) {
             console.error('Error fetching bull appear results:', error);
             return;
         }
