@@ -28,7 +28,7 @@ export async function GET() {
     const res = await fetchTickers();
 
     // const res = await fetch('/api/fetch-tickers');
-    if (!res.ok) throw new Error('Failed to fetch tickers');
+    if (!res.ok) throw new Error('Failed to fetch tickers', res);
     const get_all_tickers_resp = await res.json();
     const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
     // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
