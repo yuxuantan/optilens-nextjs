@@ -5,7 +5,7 @@ function getApexBullAppearDates(data, showWinRate = true) {
     let aggregatedData = get2DayAggregatedData(data);
     
     // Calculate Simple Moving Averages (SMA)
-    aggregatedData = calculateSMA(aggregatedData, [20, 50, 200]); // TODO: fix this. 
+    aggregatedData = calculateSMA(aggregatedData, [20, 50, 200]);
 
     if (!showWinRate) {
         aggregatedData = aggregatedData.slice(-30); // Limit the data to a configurable value
@@ -148,4 +148,84 @@ function getApexBullAppearDates(data, showWinRate = true) {
     return bullAppearDates;
 }
 
-export { getApexBullAppearDates };
+function getApexBullRagingDates(data, showWinRate = true) {
+    data = get2DayAggregatedData(data);
+    if (!showWinRate) {
+      data = data.slice(-210);  // TODO: make this configurable
+    }
+  
+    const highInflexionPoints = getHighInflexionPoints(data);
+    const potentialBearTraps = getLowInflexionPoints(data);
+    let futureBearTraps = [...potentialBearTraps];
+  
+    const bullRagingDates = [];
+  
+    highInflexionPoints.forEach(([highPointDate, highPointValue]) => {
+      if (!data.some(row => row.date === highPointDate)) {
+        return;
+      }
+  
+      // Find the stopping point (which is the next bear trap)
+      const stoppingPointDate = futureBearTraps.find(
+        ([trapDate, trapValue]) => trapDate > highPointDate && trapValue < highPointValue
+      )?.[0] || data[data.length - 1].date;
+  
+      futureBearTraps = futureBearTraps.filter(([trapDate]) => trapDate >= highPointDate);
+  
+      const previousBearTrap = findLowestBearTrapWithinPriceRange(
+        potentialBearTraps,
+        highPointDate,
+        data.find(row => row.date === stoppingPointDate).Low,
+        highPointValue
+      );
+  
+      if (!previousBearTrap) {
+        return;
+      }
+  
+      const midPoint = previousBearTrap[1] + (highPointValue - previousBearTrap[1]) / 2;
+  
+      // Analyze the range from high point to stopping point
+      const rangeData = data.filter(row => row.date >= highPointDate && row.date <= stoppingPointDate);
+      const flushDownBars = rangeData.filter(
+        row => (row.Open - row.Close) > 0.7 * (row.High - row.Low)
+      );
+  
+      if (flushDownBars.length === 0 || flushDownBars[0].High < midPoint) {
+        return;
+      }
+  
+      // Find the date which broke below bear trap
+      const breakBelowBearTrap = rangeData.find(row => row.Low < previousBearTrap[1]);
+      if (!breakBelowBearTrap) {
+        return;
+      }
+      const dateWhichBrokeBelowBearTrap = breakBelowBearTrap.date;
+  
+      const totalBarCount = rangeData.length;
+      const flushDownCount = flushDownBars.length;
+      if (totalBarCount < 5 || flushDownCount / totalBarCount < 0.3) {
+        return;
+      }
+  
+      // Check 6 bars after break below bear trap
+      const postBreakData = data.filter(row => row.date >= dateWhichBrokeBelowBearTrap).slice(0, 6);
+      for (const row of postBreakData) {
+        if (
+          row.Close > previousBearTrap[1] &&
+          (
+            row.Close - row.Open > 0.5 * (row.High - row.Low) ||
+            (row.Open > row.Low + (4 / 5) * (row.High - row.Low) && row.Close > row.Low + (4 / 5) * (row.High - row.Low))
+          )
+        ) {
+          bullRagingDates.push(row.date);
+          break;
+        }
+      }
+    });
+  
+    return bullRagingDates;
+  }
+  
+
+export { getApexBullAppearDates, getApexBullRagingDates };
