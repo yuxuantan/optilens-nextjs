@@ -1,28 +1,27 @@
 // TODO: to speed up, calculate with subset of dates (30 days), then append instead of calculating all dates
 // API route handler
-import { getApexBullAppearDates, getApexBullRagingDates } from '../../../utils/indicators';
-import { fetchStockData } from '../../../utils/getStockData';
-import { supabase } from "../../supabaseClient";
-import secCompanyTickers from '../../../data/sec_company_tickers.json';
+import { getApexBullAppearDates, getApexBullRagingDates } from './utils/indicators.js';
+import { fetchStockData } from './utils/getStockData.js';
 
-export const dynamic = 'force-dynamic'
+import { createClient } from '@supabase/supabase-js';
+dotenv.config({ path: '.env.local' });
 
-export async function GET() {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+import dotenv from 'dotenv';
+
+
+async function runScheduledJob() {
     // fetch all tickers from GET /fetch-tickers
-    // const res = await fetch('https://www.sec.gov/files/company_tickers.json');
     const res = await fetch('https://www.sec.gov/files/company_tickers.json', {
         cache: "no-store" // no-cache
     });
 
     let get_all_tickers_resp;
-    // const res = await fetch('/api/fetch-tickers');
-    if (!res.ok) {
-        console.error('Error fetching tickers:', res.statusText);
-        get_all_tickers_resp = secCompanyTickers;
-    }
-    else {
-        get_all_tickers_resp = await res.json();
-    }
+
+    get_all_tickers_resp = await res.json();
     const tickers = Object.values(get_all_tickers_resp).map(item => item.ticker);
     // const tickers = ["AAPL", "NVDA", "TSLA", "AMZN", "GOOGL", "MSFT", "FB", "NFLX", "AMD", "INTC"];
 
@@ -41,7 +40,7 @@ export async function GET() {
     const bullAppearDataWithValidDates = bullAppearData.filter(item =>
         item.analysis &&
         item.latestClosePrice &&
-        item.analysis["1D_vol"] &&
+        JSON.stringify(item.analysis).includes("volume") &&
         new Date(item.created_at) > fiveAMSGT
     );
 
@@ -49,10 +48,6 @@ export async function GET() {
     console.log('Bull appear data with valid dates:', bullAppearDataWithValidDates.length);
     const tickersToCalculate = tickers.filter(ticker => !bullAppearDataWithValidDates.some(item => item.ticker === ticker));
     console.log('Tickers to calculate:', tickersToCalculate.length);
-
-
-
-
 
     // for each ticker, get stock data for each ticker
     for (const ticker of tickersToCalculate) {
@@ -130,7 +125,7 @@ export async function GET() {
         // use indicators.js to calculate the bull appear dates -> dictionary of ticker to dates
         const bullAppearDates = getApexBullAppearDates(stockData);
         let analysisResultBullAppear = getAnalysisResults(bullAppearDates, stockData);
-        
+
         // write the dates to the cache db
         const { error } = await supabase
             .from('apex_bull_appear')
@@ -150,7 +145,7 @@ export async function GET() {
     });
 }
 
-function getAnalysisResults(dates, stockData){
+function getAnalysisResults(dates, stockData) {
     let analysisResult = {};
     for (const date of dates) {
         console.log('Calculating change for date:', date);
@@ -171,3 +166,5 @@ function getAnalysisResults(dates, stockData){
     }
     return analysisResult;
 }
+
+runScheduledJob();
