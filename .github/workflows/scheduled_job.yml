@@ -25,4 +25,4 @@ jobs:
 
       - name: Run script
         run: |
-          node scheduled_job.js
+          node scheduled_job.mjs
