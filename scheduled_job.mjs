@@ -1,6 +1,7 @@
 // TODO: to speed up, calculate with subset of dates (30 days), then append instead of calculating all dates
 // API route handler
-import { getApexBullAppearDates, getApexBullRagingDates } from './utils/indicators.js';
+import * as indicatorsModule from './utils/indicators.js';
+const { getApexBullAppearDates, getApexBullRagingDates } = indicatorsModule;
 import * as getStockDataModule from './utils/getStockData.js';
 const { fetchStockData } = getStockDataModule;
 
