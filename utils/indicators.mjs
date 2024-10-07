@@ -1,5 +1,5 @@
 
-import { calculateSMA, get2DayAggregatedData, getLowInflexionPoints, getHighInflexionPoints, findBearTraps, findLowestBearTrapWithinPriceRange } from "./indicator_helpers.js";
+import { calculateSMA, get2DayAggregatedData, getLowInflexionPoints, getHighInflexionPoints, findBearTraps, findLowestBearTrapWithinPriceRange } from "./indicator_helpers.mjs";
 function getApexBullAppearDates(data, showWinRate = true) {
 
     let aggregatedData = get2DayAggregatedData(data);
