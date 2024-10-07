@@ -8,7 +8,9 @@ on:
 jobs:
   run-node-script:
     runs-on: ubuntu-latest
-
+    env: # Or as an environment variable
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
